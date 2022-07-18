@@ -1,0 +1,93 @@
+// Arduino Smart Car Parking System
+#include <Wire.h> //including wires
+#include <LiquidCrystal_I2C.h> //including lquid crystal display
+LiquidCrystal_I2C lcd(0x27,16,2); //Change the HEX address
+#include <Servo.h> //including servo 
+Servo myServo;
+
+int IR1 = 6; //First IR sensor is connected on 6th pin in arduino board
+int IR2 = 7; //Second IR sensor is connected on 7th pin in arduino board
+bool in = false, out = false, closed;
+int totalSlot = 4; //Entering the Total number of parking Slots
+int flag1 = 0;
+int flag2 = 0;
+void setup() {
+lcd.init();
+lcd.backlight();
+Serial.print("Available Space: ");
+Serial.println(totalSlot);
+displaySpace();
+pinMode(IR1, INPUT);
+pinMode(IR2, INPUT);
+Serial.begin(9600);
+myServo.attach(3);
+closeDoor();
+closed = true;
+
+}
+void loop(){
+int outside = digitalRead(IR1); //First IR sensor is indicated as outside sensor
+int inside = digitalRead(IR2); //Second IR sensor is indicated as inside sensor
+if(outside == 0 && totalSlot > 0 && closed){
+Serial.println("outside");
+openDoor();
+out = true;
+in = false;
+closed = false;
+}
+else if (totalSlot <= 0 ){
+totalSlot = 0;
+Serial.println("No Free Space"); //it prints no free space in serial print platform 
+when there is no space available.
+}
+if(inside == 0 && totalSlot != 4 && closed){
+Serial.println("inside");
+ 
+openDoor();
+closed = false;
+in = true;
+out = false;
+}
+if(out == true && inside == 0){
+closeDoor();
+closed = true;
+totalSlot -= 1;
+Serial.print("Available Space: "); //when there is space available in parking slot 
+it shows the available space in numbers
+Serial.println(totalSlot);
+displaySpace();
+}
+else if (in == true && outside == 0){
+closeDoor();
+closed = true;
+totalSlot += 1;
+Serial.print("Available Space: ");
+Serial.println(totalSlot);
+
+displaySpace();
+}
+}
+void closeDoor(){
+for(int i = 0; i <= 90; i++){
+myServo.write(i); //servo motor or barrier closes the door after the car 
+passes the inside barrier
+delay(20);
+}
+}
+void openDoor(){
+for(int i = 90; i >= 0; i--){
+myServo.write(i); //servo motor or barrier opens if the space is available 
+and sensor detects the car
+delay(20);
+}
+}
+void displaySpace(){
+lcd.setCursor(0, 0); // move cursor to (0, 0)
+lcd.print("Parking System"); // print message at (0, 0) and it displays on LCD 
+display
+lcd.setCursor(0, 1); // move cursor to (2, 1)
+lcd.print("Total Space: "); // print message at (2, 1) and it displays total space available 
+in LCD display
+lcd.print(totalSlot); //prints the total slots available in the display
+ 
+}
